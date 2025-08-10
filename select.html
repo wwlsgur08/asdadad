@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aster: 1단계 - 매력 선택</title>
+        <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            /* [수정] 배경에 보라색 그라데이션 테마 적용 */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 1400px; /* [수정] 너비를 넓혀서 한 줄에 다 보이도록 */
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        header {
+            text-align: center;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        header h1 {
+            font-size: 22px; /* [수정] 폰트 크기 조정 */
+            margin-bottom: 5px;
+        }
+        header p {
+            font-size: 13px; /* [수정] 폰트 크기 조정 */
+            color: #666;
+        }
+        .selection-grid {
+            display: flex; /* [수정] Flexbox 레이아웃으로 변경 */
+            justify-content: space-between; /* [수정] 균등 분배 */
+            gap: 15px;
+            width: 100%;
+        }
+        .category-group {
+            flex: 1; /* [수정] 모든 그룹이 동일한 너비를 갖도록 */
+            padding: 12px; /* [수정] 패딩 조정 */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa; /* [신규] 카테고리 배경색 */
+        }
+        .category-title {
+            font-size: 13px; /* [수정] 폰트 크기 조정 */
+            font-weight: 700;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid; /* 색상은 JS에서 적용 */
+            display: inline-block;
+            align-self: flex-start; /* [신규] 왼쪽 정렬 유지 */
+        }
+        .charm-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px; /* [수정] 간격 조정 */
+        }
+        .selectable-charm {
+            font-size: 12px; /* [수정] 폰트 크기 조정 */
+            padding: 6px 10px; /* [수정] 패딩 조정 */
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-weight: 500; /* [신규] 기본 폰트 두께 */
+        }
+        .selectable-charm.selected {
+            /* [수정] 선택 시 테마 색상 적용 */
+            background-color: #4338ca; /* 진한 보라색 */
+            color: white;
+            border-color: #4338ca;
+            font-weight: 600;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e5e5;
+        }
+        #completeBtn {
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            /* [수정] 버튼에 테마 그라데이션 적용 */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+        }
+        #completeBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.5);
+        }
+        #completeBtn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>1단계: 나의 매력 모두 선택하기</h1>
+            <p>지난 여정을 통해 발견한 당신의 매력을 모두 선택해주세요. (개수 제한 없음)</p>
+        </header>
+
+        <main>
+            <div id="selectionGrid" class="selection-grid">
+                <!-- 자바스크립트로 매력 목록이 채워질 영역 -->
+            </div>
+        </main>
+
+        <footer class="footer">
+            <button id="completeBtn" disabled>선택 완료하고 점수 배분하러 가기</button>
+        </footer>
+    </div>
+    <script src="js/select.js"></script>
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aster: 나만의 별자리 만들기 (4단계)</title>
+    <style>
+        /* --- (기존 스타일은 변경 없음, 생략) --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2d3748;
+            line-height: 1.6;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            height: calc(100vh - 40px);
+            position: relative; 
+        }
+
+        .visualization-panel {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .star-container-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 100%;
+            height: 0;
+        }
+
+        .star-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+        
+        #connectionSvg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star-field {
+            position: relative;
+            width: 100%; height: 100%;
+            z-index: 2;
+        }
+
+        .star {
+            position: absolute;
+            width: 0px; 
+            height: 0px; 
+            transform: translate(-50%, -50%);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 0.5s ease, width 0.4s ease, height 0.4s ease, box-shadow 0.3s ease;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .star-clickable-area {
+            pointer-events: auto; 
+            cursor: pointer;
+            border-radius: 50%; 
+        }
+        
+        .permanent-instruction {
+            text-align: center;
+            font-size: 12px;
+            color: #4a5568;
+            background-color: #f1f5f9;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .visualization-controls {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        
+        .control-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background-color: #e2e8f0;
+            color: #4a5568;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:disabled {
+            background-color: #f1f5f9;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .control-btn:not(:disabled):hover { background-color: #cbd5e0; }
+        .control-btn.active {
+            background-color: #4c51bf;
+            color: white;
+            box-shadow: 0 4px 12px rgba(76, 81, 191, 0.2);
+        }
+        .control-btn.danger:not(:disabled) { background-color: #fed7d7; color: #c53030; }
+        .control-btn.danger:not(:disabled):hover { background-color: #fc8181; color: white; }
+        
+        .budget-panel {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .replay-btn {
+            background-color: #e2e8f0;
+            border: 1px solid #d1d5db;
+            color: #4a5568;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+        .replay-btn:hover {
+            background-color: #cbd5e0;
+        }
+
+        .panel-header {
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .panel-header h2 { font-size: 18px; margin-bottom: 3px; }
+        .panel-header p { font-size: 11px; line-height: 1.3; margin-bottom: 8px; }
+        
+        .header-middle-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .cost-guide {
+            grid-column: 2 / 3;
+            margin: 0;
+            background-color: #edf2f7;
+            border-radius: 6px;
+            padding: 4px 8px;
+            max-width: 260px;
+        }
+
+        .replay-container {
+            grid-column: 3 / 4;
+            justify-self: end;
+        }
+        
+        .cost-guide-row {
+            display: flex;
+            align-items: center;
+            font-size: 10px;
+        }
+        .cost-guide-row:first-child {
+            margin-bottom: 2px;
+        }
+        .guide-label {
+            font-weight: 600;
+            color: #4a5568;
+            width: 30px;
+            text-align: right;
+            margin-right: 6px;
+        }
+        .guide-values {
+            display: flex;
+            flex: 1;
+            justify-content: space-around;
+        }
+        .guide-values > span {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 18px;
+            height: 18px;
+        }
+        .level-tag {
+            background-color: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 9px;
+            color: #4a5568;
+        }
+        .cost-value {
+            font-weight: 500;
+            font-size: 10px;
+            color: #718096;
+        }
+        
+        .stardust-display-wrapper {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            padding: 7px 10px;
+            color: white;
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.2);
+        }
+        .stardust-display-wrapper p { 
+            margin: 0; 
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .stardust-display-wrapper span { font-size: 15px; }
+
+        .charm-list-container {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            margin-top: 8px;
+            padding: 5px;
+            padding-bottom: 15px;
+            flex-grow: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            cursor: grab;
+        }
+        .charm-list-container.active-drag {
+            cursor: grabbing;
+        }
+        
+        .charm-list-container::-webkit-scrollbar { height: 8px; }
+        .charm-list-container::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
+        .charm-list-container::-webkit-scrollbar-thumb { background: #a0aec0; border-radius: 4px; }
+        .charm-list-container::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+        .category-group {
+            width: 160px;
+            flex-shrink: 0;
+            margin: 0;
+            padding: 8px;
+            background-color: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .category-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 5px;
+            padding-bottom: 2px;
+            border-bottom: 2px solid;
+            display: inline-block;
+            align-self: flex-start;
+            cursor: default;
+            user-select: none;
+        }
+        
+        .charm-items-wrapper {
+            display: grid;
+            gap: 3px;
+        }
+
+        .charm-item {
+            display: flex;
+            flex-direction: column; 
+            align-items: center; 
+            gap: 3px;
+            margin-bottom: 0;
+            padding: 4px;
+            background-color: #fdfdff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+
+        .charm-name { 
+            font-size: 10px;
+            line-height: 1.2;
+            font-weight: 500;
+            color: #4a5568;
+            text-align: center;
+        }
+        
+        .level-buttons { 
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .level-btn {
+            width: 17px; height: 17px; 
+            font-size: 8px;
+            background-color: #edf2f7;
+            color: #718096;
+            border: 1px solid #e2e8f0;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .level-btn:hover { background-color: #e2e8f0; border-color: #cbd5e0; }
+        .level-btn.active {
+            color: white;
+            border-color: transparent;
+            transform: scale(1.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .level-btn.disabled {
+            background-color: #f7fafc;
+            color: #cbd5e0;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .star-clickable-area:focus { outline: none; }
+        
+        #onboarding-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            z-index: 1000;
+            display: none;
+            pointer-events: none;
+        }
+
+        .onboarding-highlight {
+            position: absolute;
+            border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+            transition: all 0.5s ease-in-out;
+        }
+        
+        .onboarding-tooltip {
+            position: absolute;
+            background-color: white;
+            color: #2d3748;
+            padding: 20px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            max-width: 350px;
+            text-align: center;
+            transition: all 0.5s ease-in-out;
+            pointer-events: auto;
+        }
+        .onboarding-tooltip h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .onboarding-tooltip p {
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .onboarding-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #skip-onboarding {
+            background: none;
+            border: none;
+            color: #718096;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #next-onboarding {
+            background-color: #4c51bf;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* --- [수정] 모바일 반응형 스타일 --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                height: auto;
+                overflow: auto;
+            }
+
+            .app-container {
+                flex-direction: column;
+                height: auto;
+                padding: 15px;
+                gap: 20px;
+            }
+
+            .visualization-panel, .budget-panel {
+                flex: none;
+                width: 100%;
+            }
+
+            .budget-panel {
+                padding: 15px;
+            }
+
+            .panel-header h2 {
+                font-size: 16px;
+            }
+            .panel-header p {
+                font-size: 10px;
+            }
+
+            .header-middle-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .cost-guide {
+                grid-column: 1 / -1;
+                justify-self: center;
+                max-width: 100%;
+            }
+            .replay-container {
+                grid-column: 1 / -1;
+                justify-self: center;
+            }
+
+            .charm-list-container {
+                min-height: 280px; 
+            }
+
+            /* ▼▼▼ 이 부분을 수정/교체해주세요 ▼▼▼ */
+            .onboarding-tooltip {
+                position: fixed;
+                width: 90%; 
+                max-width: 320px;
+                left: 50% !important;
+                transform: translateX(-50%);
+                z-index: 1001;
+                padding: 15px 20px;
+                bottom: 15px !important;
+            }
+            .onboarding-tooltip h3 {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+            .onboarding-tooltip p {
+                font-size: 13px;
+                line-height: 1.5;
+                margin-bottom: 15px;
+            }
+            .onboarding-tooltip #next-onboarding {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+            .onboarding-tooltip #skip-onboarding {
+                font-size: 13px;
+            }
+            /* ▲▲▲ 여기까지 수정/교체 ▲▲▲ */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+    <!-- ▼▼▼ 이 부분을 새로 추가하세요 ▼▼▼ -->
+<div id="redirect-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;">
+    <div id="redirect-box" style="background: white; padding: 30px 40px; border-radius: 12px; text-align: center;">
+        <p style="margin-bottom: 20px;">먼저 당신의 매력을 선택해야 합니다.</p>
+        <a href="select.html" style="color: white; background: #4c51bf; padding: 10px 20px; border-radius: 8px; text-decoration: none;">1단계로 이동하기</a>
+    </div>
+</div>
+<!-- ▲▲▲ 여기까지 새로 추가 ▲▲▲ -->
+    <!-- (HTML body 부분은 변경 없음, 생략) -->
+    <div class="app-container" id="appContainer">
+        
+        <div class="visualization-panel" id="visualizationPanel">
+            <div class="star-container-wrapper">
+                <div class="star-container" id="starContainer">
+                    <div class="star-field" id="starField"></div>
+                    <svg id="connectionSvg"></svg>
+                </div>
+            </div>
+            <div class="permanent-instruction">
+                별이 생성되면 <b>선 연결 모드</b>를 켜고, 별 두개를 '클릭'해 선을 연결해주세요.
+            </div>
+            <div class="visualization-controls" id="visualization-controls">
+                <button id="drawModeBtn" class="control-btn">선 연결 모드 켜기</button>
+                <button id="undoLineBtn" class="control-btn">선 연결 되돌리기</button>
+                <button id="clearLinesBtn" class="control-btn danger">모든 선 지우기</button>
+                <button id="resetAllBtn" class="control-btn danger">모두 초기화</button>
+                <button id="saveAsPngBtn" class="control-btn">PNG로 저장</button>
+            </div>
+        </div>
+
+        <div class="budget-panel" id="budgetPanel">
+            <header class="panel-header" id="panelHeader">
+                <h2>4단계: 핵심매력 발견 및 별자리 완성</h2>
+                <p>주어진 '별가루'를 투자하여 당신의 핵심 매력을 발견하고, 자신만의 별자리를 만들어보세요.</p>
+                
+                <div class="header-middle-row">
+                    <div class="cost-guide">
+                        <div class="cost-guide-row">
+                            <span class="guide-label">레벨:</span>
+                            <div class="guide-values">
+                                <span class="level-tag">1</span> <span class="level-tag">2</span> <span class="level-tag">3</span> <span class="level-tag">4</span> <span class="level-tag">5</span> <span class="level-tag">6</span>
+                            </div>
+                        </div>
+                        <div class="cost-guide-row">
+                            <span class="guide-label">비용:</span>
+                            <div class="guide-values">
+                                <span class="cost-value">1</span> <span class="cost-value">2</span> <span class="cost-value">3</span> <span class="cost-value">5</span> <span class="cost-value">7</span> <span class="cost-value">10</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="replay-container">
+                        <button id="replayOnboardingBtn" class="replay-btn">설명 다시보기</button>
+                    </div>
+                </div>
+
+                <div class="stardust-display-wrapper">
+                    <p>남은 별가루: <span id="remaining-stardust">40</span> / 40</p>
+                </div>
+            </header>
+            <div class="charm-list-container" id="charmListContainer">
+            </div>
+        </div>
+
+    </div>
+    
+    <div id="onboarding-overlay">
+        <div class="onboarding-highlight" id="onboardingHighlight"></div>
+        <div class="onboarding-tooltip" id="onboardingTooltip">
+            <h3>사용법 안내</h3>
+            <p id="onboardingText">여기에 안내 문구가 표시됩니다.</p>
+            <div class="onboarding-buttons">
+                <button id="skip-onboarding">건너뛰기</button>
+                <button id="next-onboarding">다음</button>
+            </div>
+        </div>
+    </div>
+    
+   <script src="js/code (1).js"></script>
+</body>
+</html>
